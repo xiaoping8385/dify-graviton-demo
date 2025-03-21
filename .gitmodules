@@ -1,0 +1,3 @@
+[submodule "dify-helm"]
+	path = dify-helm
+	url = https://github.com/BorisPolonsky/dify-helm.git
