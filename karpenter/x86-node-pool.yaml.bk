@@ -1,0 +1,57 @@
+---
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: x86-cpu-karpenter
+spec:
+  labels:
+    type: karpenter
+    NodeGroupType: x86-cpu-karpenter
+  requirements:
+    - key: karpenter.k8s.aws/instance-family
+      operator: In
+      values: ["m5"]
+    - key: karpenter.k8s.aws/instance-size
+      operator: In
+      values: ["xlarge", "2xlarge", "4xlarge", "8xlarge"]
+    - key: kubernetes.io/arch
+      operator: In
+      values: ["amd64"]
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values: ["spot", "on-demand"]
+  limits:
+    resources:
+      cpu: 1000
+  consolidation:
+    enabled: true
+  ttlSecondsUntilExpired: 2592000  # 720h in seconds
+  ttlSecondsAfterEmpty: 300        # 300s
+  weight: 100
+  providerRef:
+    name: x86-cpu-karpenter
+---
+apiVersion: karpenter.k8s.aws/v1alpha1
+kind: AWSNodeTemplate
+metadata:
+  name: x86-cpu-karpenter
+spec:
+  amiFamily: Bottlerocket
+  subnetSelector:
+    karpenter.sh/discovery: "true"
+  securityGroupSelector:
+    Name: ${cluster_name}-node
+  tags:
+    KarpenterProvisionerName: "x86-cpu-karpenter"
+    NodeType: "cpu"
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 100Gi
+        volumeType: gp3
+        encrypted: true
+    - deviceName: /dev/xvdb
+      ebs:
+        volumeSize: 300Gi
+        volumeType: gp3
+        encrypted: true
